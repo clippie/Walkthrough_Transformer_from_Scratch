@@ -27,8 +27,6 @@ The architecture on the right side of Step 0 is a representation of the original
 
 ## Step 1: Positional Encoding
 
-![Step 1](./screenshots/Step1.png)
-
 The raw embedding now contains learnable parameters that represent the semantic meaning of each token, but they do not have any context for where the tokens are positioned in the sequence. For this, we need to add positional encoding. The most obvious way to do this would be to have a sequence from 1 to n tokens and just add that to the embedding. However, if there is a 1,000-word sequence, then you would be completely overriding the original embedding signal with massive positional encoded values. Instead, we can use sinusoidal positional encoding, which is also used in the paper. This method uses sine and cosine pairs; each set of pairs changes at different rates, which act similarly to the hands of a clock. If you have 2 pairs, you can think of these as the minute and hour hands of a clock, where the first pair changes at a much faster rate than the second. So while position 10 might look similar to position 110 on the first pair, the added context of the lower-frequency second pair is enough to differentiate them. This method allows us to add positional context within the bounds of the raw embeddings to retain signal from both. The formula used to create these encodings in the paper is shown below:
 
 ![Positional Encoding](./screenshots/Positional_Encoding.png)
@@ -37,7 +35,12 @@ For this example, we will have 2 pairs, or "hands," which add up to the dmodel o
 
 ![Positional Encoding Graph](./screenshots/Positional_Encoding_Graph.png)
 
-As you can see from the graph, the difference between tokens 2 and 3 is clearly visible for frequency 0, and the dots for tokens 2 and 3 practically overlap for frequency 1.
+As you can see from the graph, the difference between tokens 2 and 3 is clearly visible for frequency 0, and the points for tokens 2 and 3 practically overlap for frequency 1.
+
+Before the positional encodings are added to the embedding, we scale the embeddings by the square root of the model dimensions as shown in Part 7. This ensures the initial embedding signal is larger and therefore less likely to be overshadowed by the positional encoding. Then in Part 8, we add the scaled embedding and the positional encoding using element-wise addition. This just means that position [0][0] of the scaled embedding is added to the corresponding position of the positional encoding, and that's it. In the next step, we will see a way to blend matrices that is a little more complicated.
+
+![Step 1](./screenshots/Step1.png)
+
 
 ## Step 2:
 ![Step 2](./screenshots/Step2.0.png)
