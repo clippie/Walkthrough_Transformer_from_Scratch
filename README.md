@@ -37,13 +37,26 @@ For this example, we will have 2 pairs, or "hands," which add up to the dmodel o
 
 As you can see from the graph, the difference between tokens 2 and 3 is clearly visible for frequency 0, and the points for tokens 2 and 3 practically overlap for frequency 1.
 
-Before the positional encodings are added to the embedding, we scale the embeddings by the square root of the model dimensions as shown in Part 7. This ensures the initial embedding signal is larger and therefore less likely to be overshadowed by the positional encoding. Then in Part 8, we add the scaled embedding and the positional encoding using element-wise addition. This just means that position [0][0] of the scaled embedding is added to the corresponding position of the positional encoding, and that's it. In the next step, we will see a way to blend matrices that is a little more complicated.
+Before the positional encodings are added to the embedding, we scale the embeddings by the square root of the model dimensions as shown in Part 7. This ensures the initial embedding signal is larger and therefore less likely to be overshadowed by the positional encoding. Then in Part 8, we add the scaled embedding and the positional encoding using element-wise addition. This just means that position [0][0] of the scaled embedding is added to the corresponding position of the positional encoding, for example. In the next step, we will see a way to blend matrices that is a little more complicated.
 
 ![Step 1](./screenshots/Step1.png)
 
 
-## Step 2:
+## Step 2: Encoder Layer 1 Multi-Head Self-Attention
+
+Now that our matrix has information on the positional and semantic context of each token, we can pass it into the first Multi-Head Attention block. Attention is basically seeing how much one word should pay *attention* to another word in the sequence and then using that importance to create a new representation of the text. We can do this by constructing 3 vectors called Queries (Q), Keys (K), and Values (V). The Query for one word "looks" for compatible words using the other words' Keys. Different attention heads "look" for different things because we use different Query, Key, and Value vectors for each attention head. An example of this Multi-Head attention system on a piece of text would be if you had a sentence "The King and Queen baked a cake for their son and daughter"; one attention head might have queries that look for gender information, therefore giving King-son and Queen-daughter query-key pairs larger dot products. Another attention head could find the similarity between baked-cake, or between nouns and verbs.
+
+The weight initialization for the Queries, Keys, and Values is shown in Part 1. The shape of these matrices depends on the shape of Xsrc from the previous step. When multiplying 2 matrices together, the inside dimensions have to be the same. For example, (2x4 * 4x2) works, but (2x4 * 2x4) does not. Therefore, the number of rows for these weight matrices needs to be the same as the number of columns of Xsrc, which is also dmodel (4). The number of columns then needs to be 1/2 of dmodel, making these weight matrices 4x2.
+
+Moving on to Part 2, the Query and Key matrices are combined with Xsrc to create the blended Query and Key values. We combine them using matrix multiplication, which is written out in full for Q0. These combined matrices take the Xsrc signal and emphasize certain values using the weights. In Part 3, we combine the Q0 and K0 matrices, but first the Keys need to be transposed to make the matrix multiplication work. The larger positive values in this combined matrix mean there is more of a "connection" between the queries and keys. In Part 4, we scale this combined matrix by the square root of the dimension of the keys to prevent exploding values.
+
+Softmax functions are really good at compressing values into probabilities, which is exactly what happens in Part 5. This results in a matrix of row-by-row probabilities that show the importance of each dimension. This is used to scale the Values by emphasizing the values with the most signal and punishing the values with little signal.
+
+The Values weights are blended with Xsrc in Part 6, just like we did for the Queries and Keys in Part 2. This step could be done in Step 2, but I decided to split them up because we haven't needed the Values until this point.
+
 ![Step 2](./screenshots/Step2.0.png)
+
+
 
 ![Step 2.1](./screenshots/Step2.1.png)
 
@@ -70,5 +83,7 @@ Before the positional encodings are added to the embedding, we scale the embeddi
 ## Step 14-15:
 ![Step 14](./screenshots/Step14.png)
 
+
+This example does not include backpropagation, 
 ## Step 16:
 ![Step 16](./screenshots/Step16.png)
