@@ -24,6 +24,8 @@ The architecture on the right side of Step 0 is a representation of the original
 
 **Orginal figure from "Attention is All You Need"*
 
+######Explain encoder decoder
+
 
 ## Step 1: Positional Encoding
 
@@ -63,14 +65,35 @@ The Values weights are blended with Xsrc in Part 6, just like we did for the Que
 
 We can now use the probabilities from Step 5 and multiply them by the blended Values matrix. This output is the first head of the Multi-Head attention block. In this example, we have 2 heads of attention because the number of heads is equal to the dimensions of dk as outlined in Step 0. We can repeat Parts 1-7 with different Query, Key, and Value weight matrices to get the second head. In this example, I have just used the same weights for the second head so as not to clutter this step with repetition. Once we have the 2 heads, then we just concatenate them so that they fit side by side. We use one final weight matrix on this concatenated set. This blends the insights from the different heads and ensures the correct dimensions, which are needed for the next step.
 
-
 ![Step 2.1](./screenshots/Step2.1.png)
 
 ## Step 3:
+
+In this step, we will use the Add & Normalize block, which is used for every attention and feed-forward sublayer in this architecture. The purpose of this block is to retain some of the original signal and to limit exploding/shrinking values. In Part 1, we add the input used for the Multi-Head Attention block (Xsrc) to the Multi-Head Attention output. Since we randomly initialized the weights in the Multi-Head Attention block, there is a chance that the output is some nonsensical mess that doesn't contain any helpful information. By adding the input, we ensure that the original signal remains, which is especially important early in training when the weights have not gotten the chance to "learn". 
+
+The normalizing portion of this block in Part 2 helps to keep values in check. During training, values can grow too large or shrink too small. LayerNorm contains these values using the equation below.
+
+![LayerNorm Formula](./screenshots/LayerNorm_Formula.png)
+
+The full calculations for normalizing the first row are shown in Part 2. 
+
 ![Step 3](./screenshots/Step3.png)
 
 ## Step 4-6:
+
+We can now use the outputs from the Multi-Head Attention + Add & Norm sublayer as inputs for a feed-forward network. As described in my [MLP Walkthrough](https://github.com/clippie/Walkthrough_MLP_from_Scratch/tree/main), the feed-forward network learns deeper, non-linear features for each word. To learn more about how the foundations of a multilayer perceptron work, feel free to check out my walkthrough.
+
+![FFN Formula](./screenshots/FFN_Formula.png)
+
+We determined in the setup that there would be 8 hidden neurons (dff=8). In practice, this looks like an 8x4 matrix of learnable weights for the hidden layer and an 8x1 list of biases. Each row of the inputs is dot-producted by each column of the weights matrix, and then the corresponding biases are added. This would be drawn to look like Figure X with 4 different inputs and weights for each neuron. The calculations for the hidden layer are in Part 1.
+
 ![Step 4](./screenshots/Step4.0.png)
+
+Then we use an activation function to introduce non-linearity in Part 2. For this example, I am using ReLU (shown in Figure x), which is quite simple to implement. Any positive  value is kept, and the negative values are set to 0. This ensures that the model has added complexity and cannot be reduced to a single linear equation. This concludes the hidden layer, and we can now move to the output layer outlined in Part 3. For the output layer, we use a separate weight matrix with 8x4 dimensions, which results in a 4x4 output that matches the input dimensions. We can then apply the add and normalize block to the output just like we did in step 3. 
+
+![ReLU](./screenshots/ReLU.png)
+
+This whole process from steps 2-5 is repeated for the encoder's second layer using the output from the first encoder layer as the input for the second. In the paper, they use 6 encoder layers, so you would repeat this process 5 more times. Here I am only using 2 layers to show how they interact and stack with each other. I purposely use the same output from the first encoder layer as the output for the second to avoid repetition while still showing how multiple layers work.
 
 ![Step 4.1](./screenshots/Step4.1.png)
 
