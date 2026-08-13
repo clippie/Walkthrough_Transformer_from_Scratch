@@ -12,19 +12,21 @@ The transformer that I will be creating is very similar to the one described in 
 
 Computers do not understand written language the way humans do, but they do understand numbers. Therefore, we need to translate the initial sentence into a numeric representation. We can do this by breaking up the sentence into different pieces or tokens. In this case, I am just setting everything to lowercase, removing the punctuation, and using the whitespace to determine where to start the next token. This tokenization method results in each token being a word, but there are other methods like subword tokenization that may work better at scale. 
 
-The tokens are then turned into vector embeddings
+The tokens are then turned into vector embeddings to complete the transformation from language to numbers. A vector is a way to measure magnitude and direction. In this case the vectors that describe each token are a series of numbers that position the token in an embedding space. This space could have anywhere from 1 to infinite dimensions, where each dimension represents a different part of context. 
+
+![Embedding Example](./screenshots/Embedding_Example.png)
+
 
 Looking at the Hyperparameters/Structure, there are 4 initial tokens, and 4 numbers that make up the vector embedding per token (dmodel). As we will see later, each attention block will have 2 heads, and each feed-forward block will have a hidden layer with 8 neurons. I decided to use 2 encoder and 2 decoder layers to show how these layers stack and interact; however, I only did the math for the first layer to avoid repetition. Since this is a translation task, we need the initial vocabulary and the vocabulary of the language we are translating to. In this case, the English vocab size is 4, and the German's is 6. That means there is just enough for the German translation and for the <start> and <end> tags.
 
 ![Step 0](./screenshots/Step0.png)
 
-The architecture on the right side of Step 0 is a representation of the original figure from "Attention is All You Need" and will be used throughout this example to show where we are in the process. 
+The architecture on the right side of Step 0 is a representation of the original figure from "Attention is All You Need" and will be used throughout this example to show where we are in the process. As seen in the figure, there are both Encoder and Decoder layers. This works well for translation tasks because it seperates the understanding from the predicting. Language has lots of nuances that often require future context to fully understand. For example in this sentence "ran" is used to indicate the dog is quickly moving from point A to B. Meanwhile if the sentence was instead "The dog ran the lemonade stand", or "The dog ran for mayor", the meaning of "ran" would be different. This meaning only changes with what we add after the word. The Encoder retrieves this context from the input and passes it to the decoder via cross-attention, where the decoder then process that additional context and makes a prediction for the translated sequence.
+
 
 <img src="./screenshots/Transformer_Architecture.png" width="500">
 
 **Orginal figure from "Attention is All You Need"*
-
-######Explain encoder decoder
 
 
 ## Step 1: Positional Encoding
@@ -67,7 +69,7 @@ We can now use the probabilities from Step 5 and multiply them by the blended Va
 
 ![Step 2.1](./screenshots/Step2.1.png)
 
-## Step 3:
+## Step 3: Add & Normalize
 
 In this step, we will use the Add & Normalize block, which is used for every attention and feed-forward sublayer in this architecture. The purpose of this block is to retain some of the original signal and to limit exploding/shrinking values. In Part 1, we add the input used for the Multi-Head Attention block (Xsrc) to the Multi-Head Attention output. Since we randomly initialized the weights in the Multi-Head Attention block, there is a chance that the output is some nonsensical mess that doesn't contain any helpful information. By adding the input, we ensure that the original signal remains, which is especially important early in training when the weights have not gotten the chance to "learn". 
 
@@ -79,7 +81,9 @@ The full calculations for normalizing the first row are shown in Part 2.
 
 ![Step 3](./screenshots/Step3.png)
 
-## Step 4-6:
+## Step 4-6: Feed Forward Network
+
+![FFN_1](./screenshots/FFN_1.png)
 
 We can now use the outputs from the Multi-Head Attention + Add & Norm sublayer as inputs for a feed-forward network. As described in my [MLP Walkthrough](https://github.com/clippie/Walkthrough_MLP_from_Scratch/tree/main), the feed-forward network learns deeper, non-linear features for each word. To learn more about how the foundations of a multilayer perceptron work, feel free to check out my walkthrough.
 
@@ -97,22 +101,38 @@ This whole process from steps 2-5 is repeated for the encoder's second layer usi
 
 ![Step 4.1](./screenshots/Step4.1.png)
 
-## Step 7:
+## Step 7: Decoder Set Up & Positional Encoding
+This transformer will be used for a translation task, which is one of the applications the paper uses. The translation we are looking for is "Der Hund rannte schnell". We also add context to let the model know when it can start and end the sequence. We shift the sequence right by adding the <start> token to the beginning. The model predicts the next token using the previous tokens as context. By shifting the sequence to the right, we are setting up teacher forcing, where the model uses the previous ground truth token from the training data as input instead of the token it predicted. These tokens are given the same type of embedding as the original English input. This embedding is scaled and combined with positional encoding, just like we did in Step 1.
+
 ![Step 7](./screenshots/Step7.png)
 
-## Step 8-9:
+## Step 8-9: Decoder Masked Multi-Head Attention
+One of the key differences between the encoder and decoder layers is that the decoder is autoregressive, meaning it cannot know the full context like the encoder layer; instead, it is only allowed the context up to the token that is predicted. That means we have to hide the future context from the model. This can be done by inserting a mask between the scaling and softmax portion of each attention head. This mask sets all the forbidden values to negative infinity, which is turned into 0s by the softmax function and pushes all importance to the allowed context.
+
+The rest of the Multi-Head Attention block works the same as in Step 2, parts 6-11, and the output is sent through an Add & Norm block just like in Step 3.
+
 ![Step 8](./screenshots/Step8.png)
 
-## Step 10:
+## Step 10: Decoder Cross Multi-Head Attention
+A second Multi-Head attention layer is used to combine the outputs from the encoder and the first Multi-Head Attention sublayer. This process is identical to the non-masked Multi-Head Attention sublayer used in the encoder layers, except for the inputs blended with the weights. Here I am using the same weights from the encoder layer to reduce arbitrary numbers. The Query weights are combined with the output from the masked multi-head attention sublayer in the decoder. The Key and Value weights are combined with the Encoder output, connecting the 2 sides of the transformer. 
 ![Step 10](./screenshots/Step10.png)
 
 ## Step 11-13:
+The output from the cross multi-head attention is sent through another add & norm block, a feed forward neural network and another add & norm block to complete the first decoder layer.
 ![Step 11](./screenshots/Step11.png)
 
 ## Step 14-15:
+Just like for the second encoder layer, I am using the output from the first decoder layer as the output for the second decoder layer. This is just to show how different layers stack without repeating concepts. The second decoder layer uses the output from the first decoder layer as input and the output from the second encoder layer as input for the cross attention multi-head attention.
+
+In Step 15, we take the final decoder output and multiply it by the transposed German embedding, including the <start> and <end> tags. The gives us a 5x6 matrix with 5 rows for each position (Der Hund rannte schnell <end>) and 6 columns for each available token in the vocabulary (<start> Der Hund rannte schnell <end>).
 ![Step 14](./screenshots/Step14.png)
+
+## Step 16:
+After applying the softmax function to each row, we are left with probabilities for each token for each position in the sequence. Now if we just take the highest probability option for each position, we get our predicted sentence (<start>, <start>, rannte, rannte, <end>). We can then determine the loss by taking the minus natural log of the probability assigned to the correct label. Higher loss values mean there was more of an error. As you can see from the table in Step 17, position 2 was the most inaccurate with only a 0.01 probability assigned to the correct label. Position 3 on the other hand succesfully predicted "rannte" as the correct word with a 0.44 probability, leading to a loss of only 0.81. Now this is a very crude example, and these results are more a product of luck than anything else. This model would have to ingest many more training examples and go through backpropagation, adjusting all the learnable parameters throughout the model to get a more accurate and generalized model.
+
+![Step 16](./screenshots/Step16.png)
+
 
 
 This example does not include backpropagation, 
-## Step 16:
-![Step 16](./screenshots/Step16.png)
+
