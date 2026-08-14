@@ -93,14 +93,14 @@ We can now use the probabilities from Part 5 and multiply them by the blended Va
 
 ## Step 3: Add & Normalize
 
-In this step, we will use the Add & Normalize block, which is used for every attention and feed-forward sublayer in this architecture. The purpose of this block is to retain some of the original signal and to limit exploding/shrinking values. In Part 1, we add the input used for the Multi-Head Attention block (Xsrc) to the Multi-Head Attention output. Since we randomly initialized the weights in the Multi-Head Attention block, there is a chance that the output is some nonsensical mess that doesn't contain any helpful information. By adding the input, we ensure that the original signal remains, which is especially important early in training when the weights have not gotten the chance to "learn". 
+In this step, we will use the Add & Normalize block, which is used for every attention and feed-forward sublayer in this architecture. The purpose of this block is to retain some of the original signal and to limit exploding/shrinking values. In Part 1, we add the input used for the Multi-Head Attention block (Xsrc) to the Multi-Head Attention output. Since we randomly initialized the weights in the Multi-Head Attention block, there is a chance that the output is some nonsensical mess that doesn't contain any helpful information. By adding the input, we ensure that the original signal remains, which is especially important early in training when the weights have not gotten the chance to "learn". This also helps in backpropagation as we stack more layers. Without this step, gradients have to flow back through every attention and feed-forward block during training, and can shrink to almost nothing by the time they reach the earliest layers. This Add step gives gradients a direct shortcut back, which is part of what makes deep transformer stacks trainable at all.
 
 The normalizing portion of this block in Part 2 helps to keep values in check. During training, values can grow too large or shrink too small. LayerNorm contains these values using the equation below.
 
 <p align="center">
   <img src="./screenshots/LayerNorm_Formula.png" width="400">
 </p>
-<p align="center">Figure 1: Vector Embedding Example.</p>
+<p align="center">Figure 7: LayerNorm Formula.</p>
 
 The full calculations for normalizing the first row are shown in Part 2. 
 
@@ -113,25 +113,27 @@ The full calculations for normalizing the first row are shown in Part 2.
 <p align="center">
   <img src="./screenshots/FFN_1.png" width="700">
 </p>
-<p align="center">Figure 1: Vector Embedding Example.</p>
+<p align="center">Figure 8: Feedforward Network Representation.</p>
 
-We can now use the outputs from the Multi-Head Attention + Add & Norm sublayer as inputs for a feed-forward network. As described in my [MLP Walkthrough](https://github.com/clippie/Walkthrough_MLP_from_Scratch/tree/main), the feed-forward network learns deeper, non-linear features for each word. Feel free to check out my walkthrough to learn more about how the foundations of a multilayer perceptron work.
+We can now use the outputs from the Multi-Head Attention + Add & Norm sublayer as inputs for a feedforward network. As described in my [MLP Walkthrough](https://github.com/clippie/Walkthrough_MLP_from_Scratch/tree/main), the feed-forward network learns deeper, non-linear features for each word. Feel free to check out my walkthrough to learn more about how the foundations of a multilayer perceptron work.
 
 <p align="center">
   <img src="./screenshots/FFN_Formula.png" width="500">
 </p>
+<p align="center">Figure 9: Feedforward Network Formula.</p>
 
-We determined in the setup that there would be 8 hidden neurons (dff=8). In practice, this looks like an 8x4 matrix of learnable weights for the hidden layer and an 8x1 list of biases. Each row of the inputs is dot-producted by each column of the weights matrix, and then the corresponding biases are added. This would be drawn to look like Figure X with 4 different inputs and weights for each neuron. The calculations for the hidden layer are in Part 1.
+We determined in the setup that there would be 8 hidden neurons (dff=8). In practice, this looks like an 8x4 matrix of learnable weights for the hidden layer and an 8x1 list of biases. Each row of the inputs is dot-producted by each column of the weights matrix, and then the corresponding biases are added. This would be drawn to look like Figure 8 with 4 different inputs and weights for each neuron. The calculations for the hidden layer are in Part 1.
 
 <p align="center">
   <img src="./screenshots/Step4.0.png">
 </p>
 
-Then we use an activation function to introduce non-linearity in Part 2. For this example, I am using ReLU (shown in Figure x), which is quite simple to implement. Any positive  value is kept, and the negative values are set to 0. This ensures that the model has added complexity and cannot be reduced to a single linear equation. This concludes the hidden layer, and we can now move to the output layer outlined in Part 3. For the output layer, we use a separate weight matrix with 8x4 dimensions, which results in a 4x4 output that matches the input dimensions. We can then apply the add and normalize block to the output just like we did in step 3. 
+Then we use an activation function to introduce non-linearity in Part 2. For this example, I am using ReLU (shown in Figure 10), which is quite simple to implement. Any positive  value is kept, and the negative values are set to 0. This ensures that the model has added complexity and cannot be reduced to a single linear equation. This concludes the hidden layer, and we can now move to the output layer outlined in Part 3. For the output layer, we use a separate weight matrix with 8x4 dimensions, which results in a 4x4 output that matches the input dimensions. We can then apply the add and normalize block to the output just like we did in step 3. 
 
 <p align="center">
   <img src="./screenshots/ReLU.png" width="500">
 </p>
+<p align="center">Figure 10: ReLU Function.</p>
 
 This whole process from steps 2-5 is repeated for the encoder's second layer using the output from the first encoder layer as the input for the second. In the paper, they use 6 encoder layers, so you would repeat this process 5 more times. Here I am only using 2 layers to show how they interact and stack with each other. I purposely use the same output from the first encoder layer as the output for the second to avoid repetition while still showing how multiple layers work.
 
