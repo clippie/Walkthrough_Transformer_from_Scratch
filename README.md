@@ -149,7 +149,7 @@ This transformer will be used for a translation task, which is one of the applic
 </p>
 
 ## Step 8-9: Decoder Masked Multi-Head Attention
-One of the key differences between the encoder and decoder layers is that the decoder is autoregressive, meaning it cannot know the full context like the encoder layer; instead, it is only allowed the context up to the token that is predicted. That means we have to hide the future context from the model. This can be done by inserting a mask between the scaling and softmax portion of each attention head. This mask sets all the forbidden values to negative infinity, which is turned into 0s by the softmax function and pushes all importance to the allowed context.
+One of the key differences between the encoder and decoder layers is that the decoder is autoregressive, meaning it cannot know the full context like the encoder layer; instead, it is only allowed to see the tokens at and before its current prediction, and not any of the tokens that come after. That means we have to hide the future context from the model. This can be done by inserting a mask between the scaling and softmax portion of each attention head. This mask sets all the forbidden values to negative infinity, which is turned into 0s by the softmax function and pushes all importance to the allowed context.
 
 The rest of the Multi-Head Attention block works the same as in Step 2, parts 6-11, and the output is sent through an Add & Norm block just like in Step 3.
 
@@ -158,7 +158,7 @@ The rest of the Multi-Head Attention block works the same as in Step 2, parts 6-
 </p>
 
 ## Step 10: Decoder Cross Multi-Head Attention
-A second Multi-Head Attention layer is used to combine the outputs from the encoder and the first Multi-Head Attention sublayer. This process is identical to the non-masked Multi-Head Attention sublayer used in the encoder layers, except for the inputs blended with the weights. Here I am using the same weights from the encoder layer to reduce arbitrary numbers. The Query weights are combined with the output from the masked multi-head attention sublayer in the decoder. The Key and Value weights are combined with the encoder output, connecting the 2 sides of the transformer. 
+A second Multi-Head Attention layer is used to combine the outputs from the encoder and the first Multi-Head Attention sublayer. This process is identical to the non-masked Multi-Head Attention sublayer used in the encoder layers, except for the inputs blended with the weights. Here I am using the same weights from the encoder layer to reduce arbitrary numbers. The Query weights are combined with the output from the masked multi-head attention sublayer in the decoder. The Key and Value weights are combined with the encoder output, connecting the 2 sides of the transformer. Intuitively, the decoder's query is asking "given what I have generated so far, what do I need from the source sentence to predict the next word?". Since the encoder's Keys and Values are built from the full understanding of the input, they are able to answer the question.
 
 <p align="center">
   <img src="./screenshots/Step10.png">
