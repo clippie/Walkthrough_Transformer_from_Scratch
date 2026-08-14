@@ -165,14 +165,14 @@ A second Multi-Head Attention layer is used to combine the outputs from the enco
 </p>
 
 ## Step 11-13:
-The output from the cross multi-head attention is sent through another add & norm block, a feed-forward neural network, and another add & norm block to complete the first decoder layer.
+The output from the cross multi-head attention is sent through another Add & Norm block (Step 3), a Feed Forward neural network (Steps 4-6), and another Add & Norm block to complete the first decoder layer.
 
 <p align="center">
   <img src="./screenshots/Step11.png">
 </p>
 
 ## Step 14-15:
-Just like for the second encoder layer, I am using the output from the first decoder layer as the input for the second decoder layer. This is just to show how different layers stack without repeating concepts. The second decoder layer uses the output from the first decoder layer as input and the output from the second encoder layer as input for the cross-attention multi-head attention.
+The second decoder layer uses the output from the first decoder layer as its input. The final encoder output is used for the cross-attention sublayer, just like for the first decoder layer. Every decoder layer attends to the same final encoder output. This is because we want to take the most "intelligent" version of understanding from the encoder. This gives each decoder the most informative context possible at each layer. I also decided to reuse the output from the first decoder layer for the second layer to reduce repetition, just like I did for the encoder.
 
 In Step 15, we take the final decoder output and multiply it by the transposed German embedding, including the `<start>` and `<end>` tags. This gives us a 5x6 matrix with 5 rows for each position (Der Hund rannte schnell `<end>`) and 6 columns for each available token in the vocabulary (`<start>` Der Hund rannte schnell `<end>`).
 
