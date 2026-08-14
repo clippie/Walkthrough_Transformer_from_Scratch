@@ -142,7 +142,7 @@ This whole process from steps 2-5 is repeated for the encoder's second layer usi
 </p>
 
 ## Step 7: Decoder Set Up & Positional Encoding
-This transformer will be used for a translation task, which is one of the applications the paper uses. The translation we are looking for is "Der Hund rannte schnell". We also add context to let the model know when it can start and end the sequence. We shift the sequence right by adding the <start> token to the beginning. The model predicts the next token using the previous tokens as context. By shifting the sequence to the right, we are setting up teacher forcing, where the model uses the previous ground truth token from the training data as input instead of the token it predicted. These tokens are given the same type of embedding as the original English input. This embedding is scaled and combined with positional encoding, just like we did in Step 1.
+This transformer will be used for a translation task, which is one of the applications the paper uses. The translation we are looking for is "Der Hund rannte schnell". We also add context to let the model know when it can start and end the sequence. We shift the sequence right by adding the `<start>` token to the beginning. The model predicts the next token using the previous tokens as context. By shifting the sequence to the right, we are setting up teacher forcing, where the model uses the previous ground truth token from the training data as input instead of the token it predicted. These tokens go through the same embedding process as the source tokens by mapping the token IDs to vectors. This embedding is scaled and combined with positional encoding, just like we did in Step 1.
 
 <p align="center">
   <img src="./screenshots/Step7.png">
