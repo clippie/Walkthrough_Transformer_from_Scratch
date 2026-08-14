@@ -122,13 +122,13 @@ We can now use the outputs from the Multi-Head Attention + Add & Norm sublayer a
 </p>
 <p align="center">Figure 9: Feedforward Network Formula.</p>
 
-We determined in the setup that there would be 8 hidden neurons (dff=8). In practice, this looks like an 8x4 matrix of learnable weights for the hidden layer and an 8x1 list of biases. Each row of the inputs is dot-producted by each column of the weights matrix, and then the corresponding biases are added. This would be drawn to look like Figure 8 with 4 different inputs and weights for each neuron. The calculations for the hidden layer are in Part 1.
+We determined in the setup that there would be 8 hidden neurons (dff=8). In practice, this looks like a 4x8 matrix of learnable weights for the hidden layer and a list of 8 biases. Each row of the inputs is dot-producted by each column of the weights matrix, and then the corresponding biases are added. This would be drawn to look like Figure 8 with 4 different inputs and weights for each neuron. The calculations for the hidden layer are in Part 1.
 
 <p align="center">
   <img src="./screenshots/Step4.0.png">
 </p>
 
-Then we use an activation function to introduce non-linearity in Part 2. For this example, I am using ReLU (shown in Figure 10), which is quite simple to implement. Any positive  value is kept, and the negative values are set to 0. This ensures that the model has added complexity and cannot be reduced to a single linear equation. This concludes the hidden layer, and we can now move to the output layer outlined in Part 3. For the output layer, we use a separate weight matrix with 8x4 dimensions, which results in a 4x4 output that matches the input dimensions. We can then apply the add and normalize block to the output just like we did in step 3. 
+Then we use an activation function to introduce non-linearity in Part 2. For this example, I am using ReLU (shown in Figure 10), which is quite simple to implement. Any positive  value is kept, and the negative values are set to 0. This ensures that the model has added complexity and cannot be reduced to a single linear equation. This concludes the hidden layer, and we can now move to the output layer outlined in Part 3. For the output layer, we use a separate weight matrix with 8x4 dimensions, which results in a 4x4 output that matches the input dimensions. We can then apply the add and normalize block to the output just like we did in Step 3. 
 
 <p align="center">
   <img src="./screenshots/ReLU.png" width="500">
