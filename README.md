@@ -19,40 +19,41 @@ The tokens are then turned into vector embeddings to complete the transformation
 
 <p align="center">
   <img src="./screenshots/Embedding_Example.png" width="500">
-  <p align="center">Figure 1: Vector Embedding Example.</p>
 </p>
+<p align="center">Figure 1: Vector Embedding Example.</p>
 
-Looking at the Hyperparameters/Structure, there are 4 initial tokens and 4 dimensions that make up each vector embedding (dmodel). As we will see later, each attention block will have 2 heads, and each feed-forward block will have a hidden layer with 8 neurons. I decided to use 2 encoder and 2 decoder layers to show how these layers stack and interact; however, I only did the math for the first layer to avoid repetition. Since this is a translation task, we need the initial vocabulary and the vocabulary of the language we are translating to. In this case, the source (English) vocab size is 4, and the target (German) vocab size is 6. That means there is just enough for the German translation and for the `<start>` and `<end>` tags.
+Looking at the Hyperparameters/Structure, there are 4 initial tokens and 4 dimensions that make up each vector embedding (dmodel). As we will see later, each attention block will have 2 heads, and each feed-forward block will have a hidden layer with 8 neurons. I decided to use 2 encoder and 2 decoder layers to show how these layers stack and interact; however, I only did the math for the first layer to avoid repetition. Since this is a translation task, we need the initial vocabulary and the vocabulary of the language we are translating to. In this case, the source (English) vocab size is 4, and the target (German) vocab size is 6. That means there is just enough for the German translation and for the `<start>` and `<end>` tags needed for the decoder.
 
 <p align="center">
   <img src="./screenshots/Step0.png" width="500">
 </p>
 
-The architecture on the right side of Step 0 is a representation of Figure 2 and will be used throughout this example to show where we are in the process. As seen in the figure, there are both encoder and decoder layers. This works well for translation tasks because it separates the understanding from the predicting. Language has lots of nuances that often require future context to fully understand. For example, in this sentence, "ran" is used to indicate the dog is quickly moving from point A to B. Meanwhile, if the sentence was instead "The dog ran the lemonade stand", or "The dog ran for mayor", the meaning of "ran" would be different. The encoder is able to look at every token in the sequence at once, including words that come after "ran", which can be used to determine the correct meaning of the word. The encoder then passes what it's learned to the decoder via cross-attention, where the decoder processes that additional context and makes a prediction for the translated sequence.
+The architecture on the right side of Step 0 is redrawn digitally in Figure 2 below, and will be used throughout this example to show where we are in the process. As seen in the figure, there are both encoder and decoder layers. This works well for translation tasks because it separates the understanding from the predicting. Language has lots of nuances that often require future context to fully understand. For example, in this sentence, "ran" is used to indicate the dog is quickly moving from point A to B. Meanwhile, if the sentence was instead "The dog ran the lemonade stand", or "The dog ran for mayor", the meaning of "ran" would be different. The encoder is able to look at every token in the sequence at once, including words that come after "ran", which can be used to determine the correct meaning of the word. The encoder then passes what it's learned to the decoder via cross-attention, where the decoder processes that additional context and makes a prediction for the translated sequence.
 
 <p align="center">
   <img src="./screenshots/Transformer_Architecture.png" width="500">
-  <p align="center">Figure 2: Original Figure from "Attention is All You Need" (Vaswani et al., 2017).</p>
 </p>
-
+<p align="center">Figure 2: Original Figure from "Attention is All You Need" (Vaswani et al., 2017).</p>
 
 ## Step 1: Positional Encoding
 
-The raw embedding now contains learnable parameters that represent the semantic meaning of each token, but they do not have any context for where the tokens are positioned in the sequence. For this, we need to add positional encoding. The most obvious way to do this would be to have a sequence from 1 to n tokens and just add that to the embedding. However, if there is a 1,000-word sequence, then you would be completely overriding the original embedding signal with massive positional encoded values. Instead, we can use sinusoidal positional encoding, which is also used in the paper. This method uses sine and cosine pairs; each set of pairs changes at different rates, which act similarly to the hands of a clock. If you have 2 pairs, you can think of these as the minute and hour hands of a clock, where the first pair changes at a much faster rate than the second. So while position 10 might look similar to position 110 on the first pair, the added context of the lower-frequency second pair is enough to differentiate them. This method allows us to add positional context within the bounds of the raw embeddings to retain signal from both. The formula used to create these encodings in the paper is shown below:
+The raw embedding now contains learnable parameters that represent the semantic meaning of each token, but they do not have any context for where the tokens are positioned in the sequence. For this, we need to add positional encoding. The most obvious way to do this would be to have a sequence from 1 to n tokens and just add that to the embedding. However, if there is a 1,000-word sequence, then you would be completely overriding the original embedding signal with massive positional encoded values. Instead, we can use sinusoidal positional encoding, which is the method used in the paper. This method uses sine and cosine pairs; each set of pairs changes at different rates, which act similarly to the hands of a clock. If you have 2 pairs, you can think of these as the minute and hour hands of a clock, where the first pair changes at a much faster rate than the second. So while position 10 might look similar to position 110 on the first pair, the added context of the lower-frequency second pair is enough to differentiate them. This method allows us to add positional context within the bounds of the raw embeddings to retain signal from both. The formula used to create these encodings in the paper is shown in Figure 3.
 
 <p align="center">
   <img src="./screenshots/Positional_Encoding.png" width="500">
 </p>
+<p align="center">Figure 3: Sinusodial Positional Encoding Formula.</p>
 
-For this example, we will have 2 pairs, or "hands," which add up to the dmodel of 4. We will call these frequency 0 and 1, as seen in Part 1. These frequencies have denominators of 1 and 100, respectively. With the frequency denominators calculated, we can now find the sine and cosine values for each token position, as seen in parts 2-5. Then those pairs are concatenated and stacked into a matrix. As you can see from the first pair in Part 6, the values vary significantly from row to row, yet the second pair changes much more gradually between rows. This relationship is shown on the graph below:
+For this example, we will have 2 pairs, or "hands," which add up to the dmodel of 4. We will call these frequency 0 and 1, as seen in Part 1. These frequencies have denominators of 1 and 100, respectively. With the frequency denominators calculated, we can now find the sine and cosine values for each token position, as seen in parts 2-5. Then those pairs are concatenated and stacked into a matrix. As you can see from the first pair in Part 6, the values vary significantly from row to row, yet the second pair changes much more gradually between rows. This relationship is shown in Figure 4.
 
 <p align="center">
   <img src="./screenshots/Positional_Encoding_Graph.png">
 </p>
+<p align="center">Figure 4: Positional Encoding Graph.</p>
 
 As you can see from the graph, the difference between tokens 2 and 3 is clearly visible for frequency 0, and the points for tokens 2 and 3 practically overlap for frequency 1.
 
-Before the positional encodings are added to the embedding, we scale the embeddings by the square root of the model dimensions as shown in Part 7. This ensures the initial embedding signal is larger and therefore less likely to be overshadowed by the positional encoding. Then in Part 8, we add the scaled embedding and the positional encoding using element-wise addition. This just means that position [0][0] of the scaled embedding is added to the corresponding position of the positional encoding, for example. In the next step, we will see a way to blend matrices that is a little more complicated.
+Before the positional encodings are added to the embedding, we scale the embeddings by the square root of the model dimensions as shown in Part 7. This ensures the initial embedding signal is larger and therefore less likely to be overshadowed by the positional encoding. Then in Part 8, we add the scaled embedding and the positional encoding using element-wise addition. For example, position [0][0] of the scaled embedding is added to the corresponding position of the positional encoding. In the next step, we will see a way to blend matrices that is a little more complicated.
 
 <p align="center">
   <img src="./screenshots/Step1.png">
@@ -65,12 +66,16 @@ Now that our matrix has information on the positional and semantic context of ea
 <p align="center">
   <img src="./screenshots/Attention_Architecture.png" width="750">
 </p>
+<p align="center">Figure 1: Vector Embedding Example.</p>
+
 
 The weight initialization for the Queries, Keys, and Values is shown in Part 1. The shape of these matrices depends on the shape of Xsrc from the previous step. When multiplying 2 matrices together, the inside dimensions have to be the same. For example, (2x4 * 4x2) works, but (2x4 * 2x4) does not. Therefore, the number of rows for these weight matrices needs to be the same as the number of columns of Xsrc, which is also dmodel (4). The number of columns then needs to be 1/2 of dmodel, making these weight matrices 4x2.
 
 <p align="center">
   <img src="./screenshots/Attention_Formula.png" width="500">
 </p>
+<p align="center">Figure 1: Vector Embedding Example.</p>
+
 
 Moving on to Part 2, the Query and Key matrices are combined with Xsrc to create the blended Query and Key values. We combine them using matrix multiplication, which is written out in full for Q0. These combined matrices take the Xsrc signal and emphasize certain values using the weights. In Part 3, we combine the Q0 and K0 matrices, but first the Keys need to be transposed to make the matrix multiplication work. The larger positive values in this combined matrix mean there is more of a "connection" between the queries and keys. In Part 4, we scale this combined matrix by the square root of the dimension of the keys to prevent exploding values.
 
@@ -97,6 +102,7 @@ The normalizing portion of this block in Part 2 helps to keep values in check. D
 <p align="center">
   <img src="./screenshots/LayerNorm_Formula.png" width="400">
 </p>
+<p align="center">Figure 1: Vector Embedding Example.</p>
 
 The full calculations for normalizing the first row are shown in Part 2. 
 
@@ -109,6 +115,7 @@ The full calculations for normalizing the first row are shown in Part 2.
 <p align="center">
   <img src="./screenshots/FFN_1.png" width="700">
 </p>
+<p align="center">Figure 1: Vector Embedding Example.</p>
 
 We can now use the outputs from the Multi-Head Attention + Add & Norm sublayer as inputs for a feed-forward network. As described in my [MLP Walkthrough](https://github.com/clippie/Walkthrough_MLP_from_Scratch/tree/main), the feed-forward network learns deeper, non-linear features for each word. Feel free to check out my walkthrough to learn more about how the foundations of a multilayer perceptron work.
 
