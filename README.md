@@ -24,7 +24,7 @@ The tokens are then turned into vector embeddings to complete the transformation
 </p>
 <p align="center">Figure 1: Vector Embedding Example.</p>
 
-Looking at the Hyperparameters/Structure, there are 4 initial tokens and 4 dimensions that make up each vector embedding (dmodel). As we will see later, each attention block will have 2 heads, and each feed-forward block will have a hidden layer with 8 neurons. I decided to use 2 encoder and 2 decoder layers to show how these layers stack and interact; however, I only did the math for the first layer to avoid repetition. Since this is a translation task, we need the initial vocabulary and the vocabulary of the language we are translating to. In this case, the source (English) vocab size is 4, and the target (German) vocab size is 6. That means there is just enough for the German translation and for the `<start>` and `<end>` tags needed for the decoder.
+Looking at the Hyperparameters/Structure, there are 4 initial tokens and 4 dimensions that make up each vector embedding (dmodel). As we will see later, each attention block will have 2 heads, and each Feed Forward block will have a hidden layer with 8 neurons. I decided to use 2 encoder and 2 decoder layers to show how these layers stack and interact; however, I only did the math for the first layer to avoid repetition. Since this is a translation task, we need the initial vocabulary and the vocabulary of the language we are translating to. In this case, the source (English) vocab size is 4, and the target (German) vocab size is 6. That means there is just enough for the German translation and for the `<start>` and `<end>` tags needed for the decoder.
 
 <p align="center">
   <img src="./screenshots/Step0.png" width="500">
@@ -55,7 +55,7 @@ For this example, we will have 2 pairs, or "hands," which add up to the dmodel o
 
 As you can see from the graph, the difference between tokens 2 and 3 is clearly visible for frequency 0, and the points for tokens 2 and 3 practically overlap for frequency 1.
 
-Before the positional encodings are added to the embedding, we scale the embeddings by the square root of the model dimensions as shown in Part 7. This ensures the initial embedding signal is larger and therefore less likely to be overshadowed by the positional encoding. Then in Part 8, we add the scaled embedding and the positional encoding using element-wise addition. For example, position [0][0] of the scaled embedding is added to the corresponding position of the positional encoding. In the next step, we will see a way to blend matrices that is a little more complicated.
+Before the positional encodings are added to the embedding, we scale the embeddings by the square root of the model dimensions as shown in Part 7. This ensures the initial embedding signal is larger and therefore less likely to be overshadowed by the positional encoding. Then, in Part 8, we add the scaled embedding and the positional encoding using element-wise addition. For example, position [0][0] of the scaled embedding is added to the corresponding position of the positional encoding. In the next step, we will see a way to blend matrices that is a little more complicated.
 
 <p align="center">
   <img src="./screenshots/Step1.png">
@@ -63,7 +63,7 @@ Before the positional encodings are added to the embedding, we scale the embeddi
 
 ## Step 2: Encoder Layer 1 Multi-Head Self-Attention
 
-Now that our matrix has information on the positional and semantic context of each token, we can pass it into the first Multi-Head Attention block. Attention is basically seeing how much one word should pay *attention* to another word in the sequence and then using that importance to create a new representation of the text. We can do this by constructing 3 sets of vectors called Queries (Q), Keys (K), and Values (V). The Query for one word "looks" for compatible words using the other words' Keys. Different attention heads "look" for different things because we use different Query, Key, and Value vectors for each attention head. An example of this Multi-Head attention system on a piece of text would be if you had a sentence "The King and Queen baked a cake for their son and daughter"; one attention head might have queries that look for gender information, therefore giving King-son and Queen-daughter query-key pairs larger dot products. Another attention head could find the similarity between baked-cake, or between nouns and verbs.
+Now that our matrix has information on the positional and semantic context of each token, we can pass it into the first Multi-Head Attention block. Attention is basically seeing how much one word should pay *attention* to another word in the sequence and then using that importance to create a new representation of the text. We can do this by constructing 3 sets of vectors called Queries (Q), Keys (K), and Values (V). The Query for one word "looks" for compatible words using the other words' Keys. Different attention heads "look" for different things because we use different Query, Key, and Value vectors for each attention head. An example of this Multi-Head Attention system on a piece of text would be if you had a sentence "The King and Queen baked a cake for their son and daughter"; one attention head might have queries that look for gender information, therefore giving King-son and Queen-daughter Query-Key pairs larger dot products. Another attention head could find the similarity between baked-cake, or between nouns and verbs.
 
 <p align="center">
   <img src="./screenshots/Attention_Architecture.png" width="750">
@@ -75,9 +75,9 @@ The weight initialization for the Queries, Keys, and Values is shown in Part 1. 
 <p align="center">
   <img src="./screenshots/Attention_Formula.png" width="500">
 </p>
-<p align="center">Figure 6: Attention Formula.</p>
+<p align="center">Figure 6: Attention Formula (Vaswani et al., 2017).</p>
 
-Moving on to Part 2, the Query and Key matrices are combined with Xsrc to create the blended Query and Key values. We combine them using matrix multiplication, which is written out in full for Q0. These combined matrices take the Xsrc signal and emphasize certain values using the weights. In Part 3, we combine the Q0 and K0 matrices, but first the Keys need to be transposed to make the matrix multiplication work. The larger positive values in this combined matrix mean there is more of a "connection" between the queries and keys. In Part 4, we scale this combined matrix by the square root of the dimension of the keys to prevent exploding values.
+Moving on to Part 2, the Query and Key matrices are combined with Xsrc to create the blended Query and Key values. We combine them using matrix multiplication, which is written out in full for Q0. These combined matrices take the Xsrc signal and emphasize certain values using the weights. In Part 3, we combine the Q0 and K0 matrices, but first the Keys need to be transposed to make the matrix multiplication work. The larger positive values in this combined matrix mean there is more of a "connection" between the Queries and Keys. In Part 4, we scale this combined matrix by the square root of the dimension of the keys to prevent exploding values.
 
 Softmax functions are really good at compressing values into probabilities, which is exactly what happens in Part 5. This results in a matrix of row-by-row probabilities that show how much attention each token pays to every other token in the sequence. This is used to scale the Values by emphasizing the values with the most signal and punishing the values with little signal.
 
@@ -87,20 +87,20 @@ The Values weights are blended with Xsrc in Part 6, just like we did for the Que
   <img src="./screenshots/Step2.0.png">
 </p>
 
-We can now use the probabilities from Part 5 and multiply them by the blended Values matrix. This output is the first head of the Multi-Head attention block. In this example, we have 2 heads of attention as set in the Step 0 hyperparameters. We can repeat Parts 1-7 with different Query, Key, and Value weight matrices to get the second head. In this example, I have just used the same weights for the second head so as not to clutter this step with repetition. Once we have the 2 heads, we just concatenate them so that they fit side by side. We use one final weight matrix on this concatenated set. This blends the insights from the different heads and ensures the correct dimensions, which are needed for the next step.
+We can now use the probabilities from Part 5 and multiply them by the blended Values matrix. This output is the first head of the Multi-Head Attention block. In this example, we have 2 heads of attention as set in the Step 0 hyperparameters. We can repeat Parts 1-7 with different Query, Key, and Value weight matrices to get the second head. In this example, I have just used the same weights for the second head so as not to clutter this step with repetition. Once we have the 2 heads, we just concatenate them so that they fit side by side. We use one final weight matrix on this concatenated set. This blends the insights from the different heads and ensures the correct dimensions, which are needed for the next step.
 
 <p align="center">
-  <img src="./screenshots/MultiHead_Formula.png" width="500">
+  <img src="./screenshots/MultiHead_Formula.png" width="600">
 </p>
-<p align="center">Figure 7: Multi-Head Attention Formula.</p>
+<p align="center">Figure 7: Multi-Head Attention Formula (Vaswani et al., 2017).</p>
 
 <p align="center">
   <img src="./screenshots/Step2.1.png">
 </p>
 
-## Step 3: Add & Normalize
+## Step 3: Add & Norm
 
-In this step, we will use the Add & Normalize block, which is used for every attention and feed-forward sublayer in this architecture. The purpose of this block is to retain some of the original signal and to limit exploding/shrinking values. In Part 1, we add the input used for the Multi-Head Attention block (Xsrc) to the Multi-Head Attention output. Since we randomly initialized the weights in the Multi-Head Attention block, there is a chance that the output is some nonsensical mess that doesn't contain any helpful information. By adding the input, we ensure that the original signal remains, which is especially important early in training when the weights have not gotten the chance to "learn". This also helps in backpropagation as we stack more layers. Without this step, gradients have to flow back through every attention and feed-forward block during training, and can shrink to almost nothing by the time they reach the earliest layers. This Add step gives gradients a direct shortcut back, which is part of what makes deep transformer stacks trainable at all.
+In this step, we will use the Add & Norm block, which is used for every attention and Feed Forward sublayer in this architecture. The purpose of this block is to retain some of the original signal and to limit exploding/shrinking values. In Part 1, we add the input used for the Multi-Head Attention block (Xsrc) to the Multi-Head Attention output. Since we randomly initialized the weights in the Multi-Head Attention block, there is a chance that the output is some nonsensical mess that doesn't contain any helpful information. By adding the input, we ensure that the original signal remains, which is especially important early in training when the weights have not gotten the chance to "learn". This also helps in backpropagation as we stack more layers. Without this step, gradients have to flow back through every attention and Feed Forward block during training, and can shrink to almost nothing by the time they reach the earliest layers. This Add step gives gradients a direct shortcut back, which is part of what makes deep transformer stacks trainable at all.
 
 The normalizing portion of this block in Part 2 helps to keep values in check. During training, values can grow too large or shrink too small. LayerNorm contains these values using the equation below.
 
@@ -120,14 +120,14 @@ The full calculations for normalizing the first row are shown in Part 2.
 <p align="center">
   <img src="./screenshots/FFN_1.png" width="700">
 </p>
-<p align="center">Figure 9: Feedforward Network Representation.</p>
+<p align="center">Figure 9: Feed Forward Network Representation.</p>
 
-We can now use the outputs from the Multi-Head Attention + Add & Norm sublayer as inputs for a feedforward network. As described in my [MLP Walkthrough](https://github.com/clippie/Walkthrough_MLP_from_Scratch/tree/main), the feed-forward network learns deeper, non-linear features for each word. Feel free to check out my walkthrough to learn more about how the foundations of a multilayer perceptron work.
+We can now use the outputs from the Multi-Head Attention + Add & Norm sublayer as inputs for a feed-forward network. As described in my [MLP Walkthrough](https://github.com/clippie/Walkthrough_MLP_from_Scratch/tree/main), the feed-forward network learns deeper, non-linear features for each word. Feel free to check out my walkthrough to learn more about how the foundations of a multilayer perceptron work.
 
 <p align="center">
   <img src="./screenshots/FFN_Formula.png" width="500">
 </p>
-<p align="center">Figure 10: Feedforward Network Formula.</p>
+<p align="center">Figure 10: Feed Forward Network Formula (Vaswani et al., 2017).</p>
 
 We determined in the setup that there would be 8 hidden neurons (dff=8). In practice, this looks like a 4x8 matrix of learnable weights for the hidden layer and a list of 8 biases. Each row of the inputs is dot-producted by each column of the weights matrix, and then the corresponding biases are added. This would be drawn to look like Figure 8 with 4 different inputs and weights for each neuron. The calculations for the hidden layer are in Part 1.
 
@@ -135,7 +135,7 @@ We determined in the setup that there would be 8 hidden neurons (dff=8). In prac
   <img src="./screenshots/Step4.0.png">
 </p>
 
-Then we use an activation function to introduce non-linearity in Part 2. For this example, I am using ReLU (shown in Figure 11), which is quite simple to implement. Any positive  value is kept, and the negative values are set to 0. This ensures that the model has added complexity and cannot be reduced to a single linear equation. This concludes the hidden layer, and we can now move to the output layer outlined in Part 3. For the output layer, we use a separate weight matrix with 8x4 dimensions, which results in a 4x4 output that matches the input dimensions. We can then apply the add and normalize block to the output just like we did in Step 3. 
+Then we use an activation function to introduce non-linearity in Part 2. For this example, I am using ReLU (shown in Figure 11), which is quite simple to implement. Any positive  value is kept, and the negative values are set to 0. This ensures that the model has added complexity and cannot be reduced to a single linear equation. This concludes the hidden layer, and we can now move to the output layer outlined in Part 3. For the output layer, we use a separate weight matrix with 8x4 dimensions, which results in a 4x4 output that matches the input dimensions. We can then apply the Add and Norm block to the output just like we did in Step 3. 
 
 <p align="center">
   <img src="./screenshots/ReLU.png" width="500">
@@ -165,14 +165,14 @@ The rest of the Multi-Head Attention block works the same as in Step 2, parts 6-
 </p>
 
 ## Step 10: Decoder Cross Multi-Head Attention
-A second Multi-Head Attention layer is used to combine the outputs from the encoder and the first Multi-Head Attention sublayer. This process is identical to the non-masked Multi-Head Attention sublayer used in the encoder layers, except for the inputs blended with the weights. Here I am using the same weights from the encoder layer to reduce arbitrary numbers. The Query weights are combined with the output from the masked multi-head attention sublayer in the decoder. The Key and Value weights are combined with the encoder output, connecting the 2 sides of the transformer. Intuitively, the decoder's query is asking "given what I have generated so far, what do I need from the source sentence to predict the next word?". Since the encoder's Keys and Values are built from the full understanding of the input, they are able to answer the question.
+A second Multi-Head Attention layer is used to combine the outputs from the encoder and the first Multi-Head Attention sublayer. This process is identical to the non-masked Multi-Head Attention sublayer used in the encoder layers, except for the inputs blended with the weights. Here I am using the same weights from the encoder layer to reduce arbitrary numbers. The Query weights are combined with the output from the masked Multi-Head Attention sublayer in the decoder. The Key and Value weights are combined with the encoder output, connecting the 2 sides of the transformer. Intuitively, the decoder's query is asking "given what I have generated so far, what do I need from the source sentence to predict the next word?". Since the encoder's Keys and Values are built from the full understanding of the input, they are able to answer the question.
 
 <p align="center">
   <img src="./screenshots/Step10.png">
 </p>
 
 ## Step 11-13: 
-The output from the cross multi-head attention is sent through another Add & Norm block (Step 3), a Feed Forward neural network (Steps 4-6), and another Add & Norm block to complete the first decoder layer.
+The output from the cross Multi-Head Attention is sent through another Add & Norm block (Step 3), a feed-forward neural network (Steps 4-6), and another Add & Norm block to complete the first decoder layer.
 
 <p align="center">
   <img src="./screenshots/Step11.png">
@@ -196,7 +196,7 @@ After applying the softmax function to each row, we are left with probabilities 
 
 ## Conclusion
 
-This walkthrough covered a full forward pass through a transformer, from tokenization to predicting the translated sequence. However, it does not include backpropagation. The weights are randomly initialized (as seen in the random_number_generation folder), and no learning has been done, which is reflected in the loss values in Step 17. Training a transformer means computing gradients for every one of these matrices and adjusting them over many, many examples, which isn't practical to do by hand at this scale. Transformers used in LLMs have much larger embedding spaces, more attention heads, larger feedforward networks, and more layers. They are trained on hundreds of billions of training examples for many iterations. This example doesn't even come close to that scale, but it does set the foundation for how these seemingly black-box models work.
+This walkthrough covered a full forward pass through a transformer, from tokenization to predicting the translated sequence. However, it does not include backpropagation. The weights are randomly initialized (as seen in the [random_number_generation folder](./random_number_generation)), and no learning has been done, which is reflected in the loss values in Step 17. Training a transformer means computing gradients for every one of these matrices and adjusting them over many, many examples, which isn't practical to do by hand at this scale. Transformers used in LLMs have much larger embedding spaces, more attention heads, larger feed-forward networks, and more layers. They are trained on hundreds of billions of training examples for many iterations. This example doesn't even come close to that scale, but it does set the foundation for how these seemingly black-box models work.
 
 ---
 
