@@ -4,7 +4,7 @@ Originally introduced in the 2017 paper "Attention is All You Need" (Vaswani et 
 
 Transformer architecture blends small feed-forward MLPs with attention mechanisms and has been shown "to be superior in quality while being more parallelizable and requiring significantly less time to train" (Vaswani et al., 2017) when compared to previous model designs. 
 
-In an attempt to grasp these mechanisms more thoroughly, I decided to build my own transformer and compute an entire forward pass by hand. This builds directly on the feed-forward network I worked through by hand in my MLP walkthrough, adding attention, positional encoding, and the encoder-decoder structure. Working through every matrix multiplication myself gave me a much more confident understanding of how these pieces actually fit together, and made a technology that can otherwise feel like a black box a lot less mysterious.
+In an attempt to grasp these mechanisms more thoroughly, I decided to build my own transformer and compute an entire forward pass by hand. This builds directly on the feed-forward network I worked through by hand in my [MLP Walkthrough](https://github.com/clippie/Walkthrough_MLP_from_Scratch/tree/main), adding attention, positional encoding, and the encoder-decoder structure. Working through every matrix multiplication myself gave me a much more confident understanding of how these pieces actually fit together, and made a technology that can otherwise feel like a black box a lot less mysterious.
 
 ## Full Notebook
 
@@ -189,7 +189,9 @@ After applying the softmax function to each row, we are left with probabilities 
   <img src="./screenshots/Step16.png">
 </p>
 
-This walkthrough covered a full forward pass through a transformer, from tokenization to predicting the translated sequence. However, it does not include backpropagation. The weights are randomly initialized (as seen in random_number_generation), and no learning has been done, which is reflected in the loss values in Step 17. Training a transformer means computing gradients for every one of these matrices and adjusting them over many, many examples, which isn't practical to do by hand at this scale. Transformers used in LLM's have much larger embedding spaces, more attention heads, larger feedforward networks, and more layers. They are trained on hundreds of billions of training examples for many iterations. This example doesn't even come close to that scale, but it does set the foundation for how these seemingly black-box models work.
+## Conclusion
+
+This walkthrough covered a full forward pass through a transformer, from tokenization to predicting the translated sequence. However, it does not include backpropagation. The weights are randomly initialized (as seen in the random_number_generation folder), and no learning has been done, which is reflected in the loss values in Step 17. Training a transformer means computing gradients for every one of these matrices and adjusting them over many, many examples, which isn't practical to do by hand at this scale. Transformers used in LLMs have much larger embedding spaces, more attention heads, larger feedforward networks, and more layers. They are trained on hundreds of billions of training examples for many iterations. This example doesn't even come close to that scale, but it does set the foundation for how these seemingly black-box models work.
 
 ---
 
