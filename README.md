@@ -4,6 +4,8 @@ Originally introduced in the 2017 paper "Attention is All You Need" (Vaswani et 
 
 Transformer architecture blends small feed-forward MLPs with attention mechanisms and has been shown "to be superior in quality while being more parallelizable and requiring significantly less time to train" (Vaswani et al., 2017) when compared to previous model designs. 
 
+In an attempt to grasp these mechanisms more thoroughly, I decided to build my own transformer and compute an entire forward pass by hand. This builds directly on the feed-forward network I worked through by hand in my MLP walkthrough, adding attention, positional encoding, and the encoder-decoder structure. Working through every matrix multiplication myself gave me a much more confident understanding of how these pieces actually fit together, and made a technology that can otherwise feel like a black box a lot less mysterious.
+
 ## Full Notebook
 
 <p align="center">
@@ -164,7 +166,7 @@ A second Multi-Head Attention layer is used to combine the outputs from the enco
   <img src="./screenshots/Step10.png">
 </p>
 
-## Step 11-13:
+## Step 11-13: 
 The output from the cross multi-head attention is sent through another Add & Norm block (Step 3), a Feed Forward neural network (Steps 4-6), and another Add & Norm block to complete the first decoder layer.
 
 <p align="center">
@@ -180,14 +182,14 @@ In Step 15, we take the final decoder output and multiply it by the transposed G
   <img src="./screenshots/Step14.png">
 </p>
 
-## Step 16:
+## Step 16-17:
 After applying the softmax function to each row, we are left with probabilities for each token for each position in the sequence. Now, if we just take the highest probability option for each position, we get our predicted sentence (`<start>`, `<start>`, rannte, rannte, `<end>`). We can then determine the loss by taking the minus natural log of the probability assigned to the correct label. Higher loss values mean there was more of an error. As you can see from the table in Step 17, position 2 was the most inaccurate, with only a 0.01 probability assigned to the correct label. Position 3, on the other hand, successfully predicted "rannte" as the correct word with a 0.44 probability, leading to a loss of only 0.81. Now this is a very crude example, and these results are more a product of luck than anything else. This model would have to ingest many more training examples and go through backpropagation, adjusting all the learnable parameters throughout the model to get a more accurate and generalized model.
 
 <p align="center">
   <img src="./screenshots/Step16.png">
 </p>
 
-This example does not include backpropagation, 
+This walkthrough covered a full forward pass through a transformer, from tokenization to predicting the translated sequence. However, it does not include backpropagation. The weights are randomly initialized (as seen in random_number_generation), and no learning has been done, which is reflected in the loss values in Step 17. Training a transformer means computing gradients for every one of these matrices and adjusting them over many, many examples, which isn't practical to do by hand at this scale. Transformers used in LLM's have much larger embedding spaces, more attention heads, larger feedforward networks, and more layers. They are trained on hundreds of billions of training examples for many iterations. This example doesn't even come close to that scale; it sets the foundation for how these seemingly black-box models work.
 
 ---
 
