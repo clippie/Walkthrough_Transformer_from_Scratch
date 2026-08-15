@@ -90,7 +90,7 @@ The Values weights are blended with Xsrc in Part 6, just like we did for the Que
 We can now use the probabilities from Part 5 and multiply them by the blended Values matrix. This output is the first head of the Multi-Head attention block. In this example, we have 2 heads of attention as set in the Step 0 hyperparameters. We can repeat Parts 1-7 with different Query, Key, and Value weight matrices to get the second head. In this example, I have just used the same weights for the second head so as not to clutter this step with repetition. Once we have the 2 heads, we just concatenate them so that they fit side by side. We use one final weight matrix on this concatenated set. This blends the insights from the different heads and ensures the correct dimensions, which are needed for the next step.
 
 <p align="center">
-  <img src="./screenshots/Attention_Formula.png" width="500">
+  <img src="./screenshots/MultiHead_Formula.png" width="500">
 </p>
 <p align="center">Figure 7: Multi-Head Attention Formula.</p>
 
