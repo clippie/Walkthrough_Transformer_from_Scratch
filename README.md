@@ -90,6 +90,11 @@ The Values weights are blended with Xsrc in Part 6, just like we did for the Que
 We can now use the probabilities from Part 5 and multiply them by the blended Values matrix. This output is the first head of the Multi-Head attention block. In this example, we have 2 heads of attention as set in the Step 0 hyperparameters. We can repeat Parts 1-7 with different Query, Key, and Value weight matrices to get the second head. In this example, I have just used the same weights for the second head so as not to clutter this step with repetition. Once we have the 2 heads, we just concatenate them so that they fit side by side. We use one final weight matrix on this concatenated set. This blends the insights from the different heads and ensures the correct dimensions, which are needed for the next step.
 
 <p align="center">
+  <img src="./screenshots/Attention_Formula.png" width="500">
+</p>
+<p align="center">Figure 7: Multi-Head Attention Formula.</p>
+
+<p align="center">
   <img src="./screenshots/Step2.1.png">
 </p>
 
@@ -102,7 +107,7 @@ The normalizing portion of this block in Part 2 helps to keep values in check. D
 <p align="center">
   <img src="./screenshots/LayerNorm_Formula.png" width="400">
 </p>
-<p align="center">Figure 7: LayerNorm Formula.</p>
+<p align="center">Figure 8: LayerNorm Formula.</p>
 
 The full calculations for normalizing the first row are shown in Part 2. 
 
@@ -115,14 +120,14 @@ The full calculations for normalizing the first row are shown in Part 2.
 <p align="center">
   <img src="./screenshots/FFN_1.png" width="700">
 </p>
-<p align="center">Figure 8: Feedforward Network Representation.</p>
+<p align="center">Figure 9: Feedforward Network Representation.</p>
 
 We can now use the outputs from the Multi-Head Attention + Add & Norm sublayer as inputs for a feedforward network. As described in my [MLP Walkthrough](https://github.com/clippie/Walkthrough_MLP_from_Scratch/tree/main), the feed-forward network learns deeper, non-linear features for each word. Feel free to check out my walkthrough to learn more about how the foundations of a multilayer perceptron work.
 
 <p align="center">
   <img src="./screenshots/FFN_Formula.png" width="500">
 </p>
-<p align="center">Figure 9: Feedforward Network Formula.</p>
+<p align="center">Figure 10: Feedforward Network Formula.</p>
 
 We determined in the setup that there would be 8 hidden neurons (dff=8). In practice, this looks like a 4x8 matrix of learnable weights for the hidden layer and a list of 8 biases. Each row of the inputs is dot-producted by each column of the weights matrix, and then the corresponding biases are added. This would be drawn to look like Figure 8 with 4 different inputs and weights for each neuron. The calculations for the hidden layer are in Part 1.
 
@@ -130,12 +135,12 @@ We determined in the setup that there would be 8 hidden neurons (dff=8). In prac
   <img src="./screenshots/Step4.0.png">
 </p>
 
-Then we use an activation function to introduce non-linearity in Part 2. For this example, I am using ReLU (shown in Figure 10), which is quite simple to implement. Any positive  value is kept, and the negative values are set to 0. This ensures that the model has added complexity and cannot be reduced to a single linear equation. This concludes the hidden layer, and we can now move to the output layer outlined in Part 3. For the output layer, we use a separate weight matrix with 8x4 dimensions, which results in a 4x4 output that matches the input dimensions. We can then apply the add and normalize block to the output just like we did in Step 3. 
+Then we use an activation function to introduce non-linearity in Part 2. For this example, I am using ReLU (shown in Figure 11), which is quite simple to implement. Any positive  value is kept, and the negative values are set to 0. This ensures that the model has added complexity and cannot be reduced to a single linear equation. This concludes the hidden layer, and we can now move to the output layer outlined in Part 3. For the output layer, we use a separate weight matrix with 8x4 dimensions, which results in a 4x4 output that matches the input dimensions. We can then apply the add and normalize block to the output just like we did in Step 3. 
 
 <p align="center">
   <img src="./screenshots/ReLU.png" width="500">
 </p>
-<p align="center">Figure 10: ReLU Function.</p>
+<p align="center">Figure 11: ReLU Function.</p>
 
 This whole process from steps 2-5 is repeated for the encoder's second layer using the output from the first encoder layer as the input for the second. In the paper, they use 6 encoder layers, so you would repeat this process 5 more times. Here I am only using 2 layers to show how they interact and stack with each other. I purposely use the same output from the first encoder layer as the output for the second to avoid repetition while still showing how multiple layers work.
 
